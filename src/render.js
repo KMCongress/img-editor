@@ -21,7 +21,8 @@ export function outputMime( sourceMime ) {
 
 export function outputFilename( sourceFilename, mime ) {
 	const dot = sourceFilename.lastIndexOf( '.' );
-	const base = dot > 0 ? sourceFilename.slice( 0, dot ) : sourceFilename;
+	// WP renames big uploads to `<name>-scaled.<ext>`; that suffix is noise here.
+	const base = ( dot > 0 ? sourceFilename.slice( 0, dot ) : sourceFilename ).replace( /-scaled$/, '' );
 	return `${ base }-igazitott.${ EXT[ mime ] }`;
 }
 
