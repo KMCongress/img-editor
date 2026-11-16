@@ -4,12 +4,14 @@
  * @param {Uint8ClampedArray} data   RGBA pixels (ImageData.data).
  * @param {number}            width
  * @param {number}            height
- * @return {string|null} `#rrggbb`, or null when no opaque edge pixel exists.
+ * @return {string|null} `#rrggbb`, or null when most of the edge is transparent.
  */
 export function dominantEdgeColor( data, width, height ) {
 	const band = Math.max( 1, Math.round( Math.min( width, height ) * 0.02 ) );
 	const buckets = new Map();
 	let best = null;
+	let opaque = 0;
+	let transparent = 0;
 
 	for ( let y = 0; y < height; y++ ) {
 		const inRowBand = y < band || y >= height - band;
@@ -21,8 +23,10 @@ export function dominantEdgeColor( data, width, height ) {
 			}
 			const i = ( y * width + x ) * 4;
 			if ( data[ i + 3 ] < 128 ) {
+				transparent++;
 				continue;
 			}
+			opaque++;
 			const r = data[ i ];
 			const g = data[ i + 1 ];
 			const b = data[ i + 2 ];
@@ -42,7 +46,9 @@ export function dominantEdgeColor( data, width, height ) {
 		}
 	}
 
-	if ( ! best ) {
+	// A mostly transparent edge means "no background": a trimmed logo's own
+	// strokes touching the border must not become the fill colour.
+	if ( ! best || transparent > opaque ) {
 		return null;
 	}
 	const hex = ( sum ) =>

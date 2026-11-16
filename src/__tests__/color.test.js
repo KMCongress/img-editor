@@ -56,3 +56,20 @@ test( 'averages near-identical shades within a bucket', () =>
 
 test( '1x1 image works', () =>
 	expect( dominantEdgeColor( ...img( 1, 1, () => [ 10, 20, 30, 255 ] ) ) ).toBe( '#0a141e' ) );
+
+test( 'mostly transparent edge returns null even if glyphs touch it', () =>
+	expect(
+		dominantEdgeColor(
+			...img( 100, 40, ( x, y ) =>
+				// navy strokes touch the top, bottom and left edge; ~21 % of the edge is opaque
+				x % 10 === 0 ? [ 0, 23, 115, 255 ] : [ 0, 0, 0, 0 ]
+			)
+		)
+	).toBeNull() );
+
+test( 'opaque majority still wins when some edge pixels are transparent', () =>
+	expect(
+		dominantEdgeColor(
+			...img( 100, 10, ( x ) => ( x < 30 ? [ 0, 0, 0, 0 ] : [ 255, 255, 255, 255 ] ) )
+		)
+	).toBe( '#ffffff' ) );
