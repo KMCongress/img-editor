@@ -1,0 +1,15 @@
+{
+  "name": "kmc-featured-image-fit",
+  "version": "0.0.0-dev",
+  "private": true,
+  "description": "Kiemelt kép igazítása a hírkártya arányához (WordPress bővítmény)",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "test": "wp-scripts test-unit-js"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^37.1.0"
+  }
+}
