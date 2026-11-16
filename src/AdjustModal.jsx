@@ -128,7 +128,8 @@ export default function AdjustModal( { attachment, settings, onDone, onClose } )
 			const params = { scale: state.scale, x: state.x, y: state.y, color: state.color };
 			const created = await uploadAdjusted(
 				blob,
-				outputFilename( sourceFilename( ready.source ), mime ),
+				// A browser that cannot encode the requested type returns PNG.
+				outputFilename( sourceFilename( ready.source ), outputMime( blob.type || mime ) ),
 				ready.source,
 				params
 			);
