@@ -1,0 +1,18 @@
+.kmc-fif-open { margin-top: 8px; }
+.kmc-fif-body { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.kmc-fif-preview { flex: 1 1 420px; min-width: 0; }
+.kmc-fif-preview canvas {
+	display: block; max-width: 100%; height: auto; cursor: grab; touch-action: none;
+	border: 1px solid #ddd;
+	background: repeating-conic-gradient(#eee 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+}
+.kmc-fif-preview canvas:active { cursor: grabbing; }
+.kmc-fif-caption { color: #757575; margin: 8px 0 0; }
+.kmc-fif-controls { flex: 0 1 260px; }
+.kmc-fif-label { margin: 16px 0 8px; font-weight: 500; }
+.kmc-fif-actions {
+	display: flex; justify-content: flex-end; gap: 8px;
+	position: sticky; bottom: -32px; z-index: 1;
+	margin: 24px 0 -32px; padding: 16px 0 32px;
+	background: #fff; border-top: 1px solid #ddd;
+}
