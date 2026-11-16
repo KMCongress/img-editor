@@ -21,6 +21,8 @@ function AdjustControl() {
 	const [ open, setOpen ] = useState( false );
 	const lastId = useRef( featuredId );
 	const pending = useRef( null );
+	// Originals already adjusted in this session: undo must not re-prompt.
+	const handled = useRef( new Set() );
 
 	// A newly chosen image is checked once its media record has loaded.
 	useEffect( () => {
@@ -30,7 +32,7 @@ function AdjustControl() {
 		}
 		if ( pending.current && media?.id === pending.current ) {
 			pending.current = null;
-			if ( shouldAutoOpen( media, settings ) ) {
+			if ( ! handled.current.has( media.id ) && shouldAutoOpen( media, settings ) ) {
 				setOpen( true );
 			}
 		}
@@ -51,6 +53,7 @@ function AdjustControl() {
 					settings={ settings }
 					onClose={ () => setOpen( false ) }
 					onDone={ ( id ) => {
+						handled.current.add( media.meta?._kmc_fif_source || media.id );
 						lastId.current = id;
 						pending.current = null;
 						setOpen( false );
