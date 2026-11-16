@@ -1,0 +1,41 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  plugin-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+
+      - run: npm ci
+      - run: composer install --no-interaction --no-progress
+      - run: npm test
+      - run: php vendor/bin/phpunit
+      - run: npm run build
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          bin/package.sh "$VERSION" kmc-featured-image-fit.zip
+          bin/check-zip.sh kmc-featured-image-fit.zip "$VERSION"
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" kmc-featured-image-fit.zip --clobber
