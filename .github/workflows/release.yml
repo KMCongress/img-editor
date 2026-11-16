@@ -28,6 +28,7 @@ jobs:
       - run: npm test
       - run: php vendor/bin/phpunit
       - run: npm run build
+      - run: tests/sh/check-zip-test.sh
 
       - name: Package
         run: |

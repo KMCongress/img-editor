@@ -17,7 +17,10 @@ done
 forbidden=$(printf '%s\n' "$list" | grep -E "^$slug/(src|node_modules|tests|docs|vendor|bin|\.wp|\.github)/|/\.[^/]+$" || true)
 [ -z "$forbidden" ] || fail "nem kerülhet a zipbe: $(echo "$forbidden" | head -3 | tr '\n' ' ')"
 
-unzip -p "$zip" "$slug/$slug.php" | grep -qE "^ \* Version: +$version$" || fail "a plugin header Version nem $version"
-unzip -p "$zip" "$slug/readme.txt" | grep -qE "^Stable tag: $version$" || fail "a readme.txt Stable tag nem $version"
+# Exact string comparison: the version must not be used as a regex.
+header_version=$(unzip -p "$zip" "$slug/$slug.php" | sed -nE 's/^ \* Version: +//p' | head -1)
+stable_tag=$(unzip -p "$zip" "$slug/readme.txt" | sed -nE 's/^Stable tag: +//p' | head -1)
+[ "$header_version" = "$version" ] || fail "a plugin header Version nem $version (hanem: $header_version)"
+[ "$stable_tag" = "$version" ] || fail "a readme.txt Stable tag nem $version (hanem: $stable_tag)"
 
 echo "check-zip: OK ($zip, $version, $(printf '%s\n' "$list" | wc -l) bejegyzés)"
