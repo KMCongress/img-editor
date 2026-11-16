@@ -2,14 +2,14 @@
 import { test, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
-const store = { featured: 0, media: {} };
+const store = { featured: 0, media: {}, mediaArgs: [] };
 const editPost = vi.fn();
 vi.mock( '@wordpress/data', () => ( {
 	useSelect: ( fn ) =>
 		fn( ( name ) =>
 			name === 'core/editor'
 				? { getEditedPostAttribute: () => store.featured }
-				: { getMedia: ( id ) => store.media[ id ] ?? null }
+				: { getMedia: ( id, ...rest ) => ( store.mediaArgs.push( rest ), store.media[ id ] ?? null ) }
 		),
 	useDispatch: () => ( { editPost } ),
 } ) );
@@ -57,4 +57,15 @@ test( 'choosing a right-ratio image does not auto-open', () => {
 	rerender( <Wrapped /> );
 	expect( screen.queryByText( 'MODAL' ) ).toBeNull();
 	expect( screen.getByText( 'Igazítás' ) ).toBeTruthy();
+} );
+
+test( 'media is read in view context so Authors can load it', () => {
+	store.featured = 5;
+	store.media = { 5: att( 5, 400, 400 ) };
+	store.mediaArgs = [];
+	render( <Wrapped /> );
+	expect( store.mediaArgs.length ).toBeGreaterThan( 0 );
+	for ( const rest of store.mediaArgs ) {
+		expect( rest[ 0 ]?.context ?? 'view' ).toBe( 'view' );
+	}
 } );

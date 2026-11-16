@@ -10,10 +10,16 @@ export async function resolveSource( attachment ) {
 		return { source: attachment, params: null };
 	}
 	try {
-		const source = await apiFetch( { path: `/wp/v2/media/${ sourceId }?context=edit` } );
+		// View context: Authors may not read others' media in edit context.
+		const source = await apiFetch( { path: `/wp/v2/media/${ sourceId }` } );
 		return { source, params: attachment.meta._kmc_fif_params ?? null };
 	} catch ( e ) {
-		return { source: attachment, params: null };
+		// Only a deleted original falls back; anything else must not silently
+		// make the adjusted image its own source (padding would stack).
+		if ( e?.code === 'rest_post_invalid_id' ) {
+			return { source: attachment, params: null };
+		}
+		throw e;
 	}
 }
 

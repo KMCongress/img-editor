@@ -10,7 +10,7 @@ test( 'resolveSource follows _kmc_fif_source', async () => {
 	apiFetch.mockResolvedValueOnce( { id: 7, source_url: '/orig.png' } );
 	const params = { scale: 0.8, x: 1, y: 2, color: '#ffffff' };
 	const r = await resolveSource( { id: 9, meta: { _kmc_fif_source: 7, _kmc_fif_params: params } } );
-	expect( apiFetch ).toHaveBeenCalledWith( { path: '/wp/v2/media/7?context=edit' } );
+	expect( apiFetch ).toHaveBeenCalledWith( { path: '/wp/v2/media/7' } );
 	expect( r ).toEqual( { source: { id: 7, source_url: '/orig.png' }, params } );
 } );
 
@@ -51,4 +51,11 @@ test( 'uploadAdjusted uploads then writes meta and alt text', async () => {
 		data: { alt_text: 'Logó', meta: { _kmc_fif_source: 7, _kmc_fif_params: params } },
 	} );
 	expect( result ).toEqual( { id: 11, meta: { _kmc_fif_source: 7 } } );
+} );
+
+test( 'resolveSource surfaces errors other than a deleted source', async () => {
+	apiFetch.mockRejectedValueOnce( { code: 'rest_forbidden_context', message: 'Nincs jogosultság' } );
+	await expect(
+		resolveSource( { id: 9, meta: { _kmc_fif_source: 7 } } )
+	).rejects.toMatchObject( { code: 'rest_forbidden_context' } );
 } );

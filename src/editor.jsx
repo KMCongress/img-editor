@@ -14,7 +14,7 @@ const settings = window.kmcFifSettings ?? {
 function AdjustControl() {
 	const featuredId = useSelect( ( select ) => select( 'core/editor' ).getEditedPostAttribute( 'featured_media' ), [] );
 	const media = useSelect(
-		( select ) => ( featuredId ? select( 'core' ).getMedia( featuredId, { context: 'edit' } ) : null ),
+		( select ) => ( featuredId ? select( 'core' ).getMedia( featuredId ) : null ),
 		[ featuredId ]
 	);
 	const { editPost } = useDispatch( 'core/editor' );
