@@ -14,14 +14,17 @@ Terv: [`docs/superpowers/specs/2026-11-16-featured-image-fit-design.md`](docs/su
 
 Követelmény: WordPress 6.6+, PHP 7.4+, blokkszerkesztő.
 
-## Beállítás oldalanként
+## Beállítás
 
-| Oldal | Cél arány | Min. szélesség | Forrás |
-|---|---|---|---|
-| msotke.hu (pilot) | 2 : 1 | 300 | a téma `loop-thumbnail` mérete, 300×150 hard crop |
-| pathology.hu | 100 : 66 | 300 | az Elementor Posts widget `padding-bottom: calc(0.66 * 100%)` |
+Beállítások › Kiemelt kép igazítása:
 
-A cél arányt a téma vagy a widget beállítása határozza meg. Ha ez változik, a beállítást is követni kell.
+| Mező | Jelentés | Alapérték |
+|---|---|---|
+| Cél arány (szélesség : magasság) | a téma hírlistájában megjelenő kép aránya | 2 : 1 |
+| Minimális kimeneti szélesség | legalább akkora legyen, mint a téma által használt képméret, különben a WordPress nem generálja le | 300 px |
+| Alapértelmezett kitöltő szín | ha a kép széléből nem állapítható meg a háttérszín (pl. átlátszó szél) | `#ffffff` |
+
+A cél arányt a téma határozza meg. Klasszikus témánál a regisztrált képméret, például `add_image_size( 'loop-thumbnail', 300, 150, true )`, 2 : 1-et ad. Elementor Posts widgetnél az „Image Ratio” beállítás, például 0,66, 100 : 66-ot. Ha a téma változik, a beállítást is követni kell.
 
 ## Fejlesztés
 
@@ -36,7 +39,7 @@ npm run build            # build/ — ezt tölti be a bővítmény
 
 ```bash
 export WP_DB_HOST=… WP_DB_USER=… WP_DB_PASSWORD=…
-bin/local-wp.sh install   # .wp/site — WP + kmc_fif_wp DB + a bővítmény szimlinkelve, 300x150 loop-thumbnail mu-plugin
+bin/local-wp.sh install   # .wp/site — WP + kmc_fif_wp DB + a bővítmény szimlinkelve, egy 300×150-es hard-crop képméretet regisztráló mu-pluginnal
 bin/local-wp.sh serve     # http://127.0.0.1:8899/wp-admin  (admin / admin)
 bin/local-wp.sh wp …      # wp-cli
 ```
