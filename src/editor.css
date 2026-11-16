@@ -16,3 +16,8 @@
 	margin: 24px 0 -32px; padding: 16px 0 32px;
 	background: #fff; border-top: 1px solid #ddd;
 }
+
+/* Show the whole featured image in the panel, as the news list will. */
+.editor-post-featured-image .editor-post-featured-image__preview .editor-post-featured-image__preview-image {
+	object-fit: contain;
+}
