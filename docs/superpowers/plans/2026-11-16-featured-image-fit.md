@@ -6,7 +6,7 @@
 
 **Architecture:** A képfeldolgozás teljesen a böngészőben, `<canvas>`-on fut, így az előnézet és a mentett kép ugyanabból a renderelőből jön (pixel-egyezés). A tiszta logika (vászonméret, illesztés, határolás, színválasztás) DOM-mentes JS modulokban van, jest-tel tesztelve. A PHP-oldal vékony: beállítási oldal, attachment-meta regisztráció, script betöltése a beállításokkal.
 
-**Tech Stack:** WordPress 6.x (Gutenberg), PHP ≥ 7.4 (a bővítmény kódja; a fejlesztői gépen 8.5), `@wordpress/scripts` (build + jest), `@wordpress/components`, `@wordpress/hooks`, `@wordpress/api-fetch`, `@wordpress/data`, PHPUnit 11 (csak a tiszta PHP-osztályokra).
+**Tech Stack:** WordPress 6.x (Gutenberg), PHP ≥ 7.4 (a bővítmény kódja; a fejlesztői gépen 8.5), `@wordpress/scripts` (build + jest), `@wordpress/components`, `@wordpress/hooks`, `@wordpress/api-fetch`, `@wordpress/data`, PHPUnit 11 (csak a tiszta PHP-osztályokra). Kiadás: GitHub Actions → release asset zip (publikus repó).
 
 **Spec:** `docs/superpowers/specs/2026-11-16-featured-image-fit-design.md`
 
@@ -57,7 +57,7 @@ A repó gyökere maga a bővítmény (a `build/` gitignore-olt; a telepítő zip
 ### Task 1: Bővítményváz, beállítások, meta
 
 **Files:**
-- Create: `kmc-featured-image-fit.php`, `includes/class-settings.php`, `includes/class-plugin.php`, `package.json`, `composer.json`, `phpunit.xml.dist`, `.gitignore`, `tests/php/bootstrap.php`, `tests/php/SettingsTest.php`, `src/index.js` (üres belépési pont, a 6. feladat tölti meg)
+- Create: `readme.txt`, `kmc-featured-image-fit.php`, `includes/class-settings.php`, `includes/class-plugin.php`, `package.json`, `composer.json`, `phpunit.xml.dist`, `.gitignore`, `tests/php/bootstrap.php`, `tests/php/SettingsTest.php`, `src/index.js` (üres belépési pont, a 6. feladat tölti meg)
 
 **Interfaces:**
 - Produces:
@@ -72,7 +72,7 @@ A repó gyökere maga a bővítmény (a `build/` gitignore-olt; a telepítő zip
   - JS globál: `window.kmcFifSettings = { ratioW, ratioH, minWidth, defaultColor }` (`wp_add_inline_script` before), csak `post` szerkesztésekor (`enqueue_block_editor_assets` + `get_current_screen()->post_type === 'post'`).
   - Script handle: `kmc-fif-editor`, a `build/index.js` + `build/index.asset.php` alapján.
 
-- [ ] **Step 1: Toolchain**
+- [ ] **Step 1: Toolchain** (a plugin headerben `Version: 0.0.0-dev`; mellé WP-formátumú `readme.txt` `Stable tag: 0.0.0-dev`-vel — a 8. feladat írja át kiadáskor)
   `package.json`: devDependency `@wordpress/scripts`, scriptek `build`, `start`, `test` (`wp-scripts test-unit-js`), `plugin-zip`; `files` mező a zip tartalmához (`kmc-featured-image-fit.php`, `includes`, `build`). `composer.json`: dev `phpunit/phpunit ^11.5`. `.gitignore`: `node_modules/ vendor/ build/ *.zip`. Run: `npm install && composer install` → hibátlan.
 
 - [ ] **Step 2: Írd meg a bukó tesztet** — `tests/php/SettingsTest.php` (a bootstrap `define('ABSPATH', __DIR__)`-t és `sanitize_hex_color` polyfillt ad, ha nincs WP):
@@ -345,6 +345,33 @@ test('modal shows target size line', async ()=>{
   7. Átlátszó szélű PNG → fehér háttér (nem fekete).
   8. Bejegyzés mentése, frontend: a kiemelt kép az igazított.
 
-- [ ] **Step 3: Kiadás** — `npm run build && npm run plugin-zip` → `kmc-featured-image-fit.zip` (nem commitolva); a README-ben a telepítés: Bővítmények › Új › Feltöltés.
+- [ ] **Step 3: Commit** — `git commit -m "docs: README, helyi WP ellenőrző script"`
 
-- [ ] **Step 4: Commit** — `git commit -m "docs: README, helyi WP ellenőrző script"`
+---
+
+### Task 8: Kiadás GitHub Release-ből
+
+A repó **publikus** (`KMCongress/img-editor`). Egy GitHub Release közzétételekor a GitHub Actions állítja elő a WordPressbe közvetlenül feltölthető zipet, és csatolja a release-hez.
+
+**Files:**
+- Create: `.github/workflows/release.yml`, `bin/check-zip.sh`
+- Modify: `README.md` (kiadási folyamat)
+
+**Követelmények a zipre („proper WP plugin zip”):**
+- Neve `kmc-featured-image-fit.zip`, benne **egyetlen gyökérkönyvtár** `kmc-featured-image-fit/` (így a WP a jó könyvtárba telepít, és frissítéskor felülírja).
+- Tartalom: `kmc-featured-image-fit.php`, `includes/`, `build/` (benne `index.asset.php`), `readme.txt`. **Nincs** benne `src/`, `node_modules/`, `tests/`, `docs/`, `vendor/`, `.github/`, dotfile.
+- A plugin header `Version:` értéke = a tag `v` nélkül; a workflow a tagből írja be a zip-be kerülő példányba (a repóban `Version: 0.0.0-dev` áll), így elfelejteni sem lehet.
+- `readme.txt` WP-formátumban (`Stable tag` = verzió, ugyanígy beírva).
+
+- [ ] **Step 1: `bin/check-zip.sh <zip> <version>`** — `unzip -Z1`-gyel ellenőrzi: minden bejegyzés `kmc-featured-image-fit/`-tal kezdődik; megvan a `kmc-featured-image-fit/kmc-featured-image-fit.php` és a `build/index.asset.php`; nincs `src/|node_modules/|tests/|docs/|/\.` találat; a zipben lévő header `Version: <version>`. Nem nulla exit kód hibánál, a hiba okával.
+
+- [ ] **Step 2: Futtasd helyben bukni, majd átmenni** — egy kézzel összerakott rossz zipre (gyökérkönyvtár nélkül) FAIL; a Step 3 csomagoló lépéseit helyben lefuttatva (`VERSION=0.1.0`) PASS.
+
+- [ ] **Step 3: `.github/workflows/release.yml`**
+  - Trigger: `release: types: [published]`; `permissions: contents: write`.
+  - Lépések: checkout → `actions/setup-node` (Node 24, npm cache) → `npm ci` → `npm test` → `npm run build` → `VERSION=${GITHUB_REF_NAME#v}` → staging könyvtár `dist/kmc-featured-image-fit/` a fenti tartalommal, `sed`-del beírt `Version:` és `Stable tag:` → `(cd dist && zip -r ../kmc-featured-image-fit.zip kmc-featured-image-fit)` → `bin/check-zip.sh kmc-featured-image-fit.zip "$VERSION"` → `gh release upload "$GITHUB_REF_NAME" kmc-featured-image-fit.zip --clobber` (`GH_TOKEN: ${{ github.token }}`).
+  - A csomagolás saját staginggel megy, nem a `wp-scripts plugin-zip`-pel, mert annak a gyökérkönyvtár-viselkedése verziófüggő.
+
+- [ ] **Step 4: Próbakiadás** — `gh release create v0.1.0 --prerelease --title "0.1.0" --notes "Pilot (msotke)"` → a workflow zöld, a release-en ott a `kmc-featured-image-fit.zip`; letöltve `bin/check-zip.sh` PASS. (Csak a felhasználó jóváhagyásával — kifelé látható művelet.)
+
+- [ ] **Step 5: Commit** — `git commit -m "ci: release-kor feltölthető WP plugin zip"`
