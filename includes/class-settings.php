@@ -6,6 +6,11 @@ final class KMC_FIF_Settings
 {
     public const OPTION = 'kmc_fif_settings';
     private const PAGE = 'kmc-fif';
+    private const LIMITS = [
+        'ratio_w' => ['min' => 1, 'max' => 1000],
+        'ratio_h' => ['min' => 1, 'max' => 1000],
+        'min_width' => ['min' => 50, 'max' => 2560],
+    ];
 
     public static function defaults(): array
     {
@@ -22,12 +27,77 @@ final class KMC_FIF_Settings
             return $defaults;
         }
 
-        return [
-            'ratio_w' => self::int_in_range($input['ratio_w'] ?? null, 1, 1000, $defaults['ratio_w']),
-            'ratio_h' => self::int_in_range($input['ratio_h'] ?? null, 1, 1000, $defaults['ratio_h']),
-            'min_width' => self::int_in_range($input['min_width'] ?? null, 50, 2560, $defaults['min_width']),
-            'default_color' => self::color($input['default_color'] ?? null, $defaults['default_color']),
+        $out = [];
+        foreach (self::LIMITS as $key => $limit) {
+            $out[$key] = self::int_in_range($input[$key] ?? null, $limit['min'], $limit['max'], $defaults[$key]);
+            if (self::was_rejected($input, $key, $out[$key])) {
+                self::report($key, sprintf(
+                    /* translators: 1: field label, 2: minimum, 3: maximum, 4: value kept */
+                    __('%1$s: %2$d és %3$d közötti egész szám lehet; a mentett érték %4$d.', 'kmc-fif'),
+                    self::label($key), $limit['min'], $limit['max'], $out[$key]
+                ));
+            }
+        }
+        $out['default_color'] = self::color($input['default_color'] ?? null, $defaults['default_color']);
+        if (self::was_rejected($input, 'default_color', $out['default_color'])) {
+            self::report('default_color', sprintf(
+                __('%1$s: #rrggbb formátumú szín lehet; a mentett érték %2$s.', 'kmc-fif'),
+                self::label('default_color'), $out['default_color']
+            ));
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{min: int, max: int}
+     */
+    public static function field_limits(string $key): array
+    {
+        return self::LIMITS[$key];
+    }
+
+    private static function label(string $key): string
+    {
+        $labels = [
+            'ratio_w' => __('Cél arány — szélesség', 'kmc-fif'),
+            'ratio_h' => __('Cél arány — magasság', 'kmc-fif'),
+            'min_width' => __('Minimális kimeneti szélesség (px)', 'kmc-fif'),
+            'default_color' => __('Alapértelmezett kitöltő szín', 'kmc-fif'),
         ];
+
+        return $labels[$key];
+    }
+
+    /**
+     * A value was submitted but did not survive sanitising.
+     *
+     * @param mixed $kept
+     */
+    private static function was_rejected(array $input, string $key, $kept): bool
+    {
+        if (!array_key_exists($key, $input) || '' === $input[$key] || null === $input[$key]) {
+            return false;
+        }
+        $given = is_string($input[$key]) ? strtolower(trim($input[$key])) : $input[$key];
+
+        return (string) $given !== (string) $kept;
+    }
+
+    private static function report(string $key, string $message): void
+    {
+        if (!function_exists('add_settings_error')) {
+            return;
+        }
+        // WP runs the sanitize callback twice when the option is first created.
+        if (function_exists('get_settings_errors')) {
+            foreach (get_settings_errors(self::OPTION) as $existing) {
+                if ($existing['code'] === 'kmc_fif_' . $key) {
+                    return;
+                }
+            }
+        }
+        add_settings_error(self::OPTION, 'kmc_fif_' . $key, $message);
     }
 
     public static function get(): array
@@ -51,14 +121,8 @@ final class KMC_FIF_Settings
 
         add_settings_section('kmc_fif_main', '', '__return_false', self::PAGE);
 
-        $fields = [
-            'ratio_w' => __('Cél arány — szélesség', 'kmc-fif'),
-            'ratio_h' => __('Cél arány — magasság', 'kmc-fif'),
-            'min_width' => __('Minimális kimeneti szélesség (px)', 'kmc-fif'),
-            'default_color' => __('Alapértelmezett kitöltő szín', 'kmc-fif'),
-        ];
-        foreach ($fields as $key => $label) {
-            add_settings_field($key, $label, [self::class, 'render_field'], self::PAGE, 'kmc_fif_main', [
+        foreach (['ratio_w', 'ratio_h', 'min_width', 'default_color'] as $key) {
+            add_settings_field($key, self::label($key), [self::class, 'render_field'], self::PAGE, 'kmc_fif_main', [
                 'key' => $key,
                 'label_for' => 'kmc_fif_' . $key,
             ]);
@@ -86,7 +150,11 @@ final class KMC_FIF_Settings
 
             return;
         }
-        printf('<input type="number" class="small-text" min="1" id="kmc_fif_%1$s" name="%2$s" value="%3$d">', esc_attr($key), esc_attr($name), (int) $value);
+        $limit = self::field_limits($key);
+        printf(
+            '<input type="number" class="small-text" min="%4$d" max="%5$d" step="1" id="kmc_fif_%1$s" name="%2$s" value="%3$d">',
+            esc_attr($key), esc_attr($name), (int) $value, $limit['min'], $limit['max']
+        );
     }
 
     public static function render_page(): void

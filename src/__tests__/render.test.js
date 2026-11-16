@@ -56,3 +56,10 @@ test.each( [
 	[ 'noext', 'image/png', 'noext-igazitott.png' ],
 	[ 'a.b.c.jpg', 'image/jpeg', 'a.b.c-igazitott.jpg' ],
 ] )( 'outputFilename %s', ( f, m, o ) => expect( outputFilename( f, m ) ).toBe( o ) );
+
+test.each( [
+	[ 'foto-scaled.jpg', 'image/jpeg', 'foto-igazitott.jpg' ],
+	[ 'foto-scaled-1.jpg', 'image/jpeg', 'foto-scaled-1-igazitott.jpg' ],
+	[ 'unscaled.png', 'image/png', 'unscaled-igazitott.png' ],
+] )( 'outputFilename drops the WP -scaled suffix: %s', ( f, m, o ) =>
+	expect( outputFilename( f, m ) ).toBe( o ) );

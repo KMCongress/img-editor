@@ -77,3 +77,45 @@ test( 're-adjust starts from the original and saved params', async () => {
 	await waitFor( () => expect( exp ).toHaveBeenCalled() );
 	expect( exp.mock.calls[ 0 ][ 2 ] ).toEqual( params );
 } );
+
+test( 'filename follows the encoded type when the browser falls back from WebP', async () => {
+	mockImage();
+	vi.spyOn( media, 'resolveSource' ).mockResolvedValue( { source: { ...logo, mime_type: 'image/webp', media_details: { ...logo.media_details, file: '2026/11/foto.webp' } }, params: null } );
+	vi.spyOn( renderMod, 'exportBlob' ).mockResolvedValue( new Blob( [ 'x' ], { type: 'image/png' } ) );
+	const up = vi.spyOn( media, 'uploadAdjusted' ).mockResolvedValue( { id: 44 } );
+	render( <AdjustModal attachment={ logo } settings={ s } onDone={ () => {} } onClose={ () => {} } /> );
+	fireEvent.click( await screen.findByText( 'Mentés és beállítás kiemelt képként' ) );
+	await waitFor( () => expect( up ).toHaveBeenCalled() );
+	expect( up.mock.calls[ 0 ][ 1 ] ).toBe( 'foto-igazitott.png' );
+} );
+
+/** Escape + close button; the Modal calls onRequestClose after its exit animation. */
+function tryToClose( dialog ) {
+	fireEvent.keyDown( dialog, { key: 'Escape', code: 'Escape' } );
+	fireEvent.animationEnd( dialog );
+	for ( const b of screen.queryAllByRole( 'button', { name: 'Close' } ) ) {
+		fireEvent.click( b );
+		fireEvent.animationEnd( dialog );
+	}
+}
+
+test( 'the modal cannot be closed while saving', async () => {
+	mockImage();
+	vi.spyOn( renderMod, 'exportBlob' ).mockReturnValue( new Promise( () => {} ) );
+	const onClose = vi.fn();
+	render( <AdjustModal attachment={ logo } settings={ s } onDone={ () => {} } onClose={ onClose } /> );
+	fireEvent.click( await screen.findByText( 'Mentés és beállítás kiemelt képként' ) );
+	await waitFor( () => expect( renderMod.exportBlob ).toHaveBeenCalled() );
+	tryToClose( await screen.findByRole( 'dialog' ) );
+	await new Promise( ( r ) => setTimeout( r, 800 ) );
+	expect( onClose ).not.toHaveBeenCalled();
+} );
+
+test( 'Escape closes the modal when idle (control)', async () => {
+	mockImage();
+	const onClose = vi.fn();
+	render( <AdjustModal attachment={ logo } settings={ s } onDone={ () => {} } onClose={ onClose } /> );
+	await screen.findByText( 'Mentés és beállítás kiemelt képként' );
+	tryToClose( await screen.findByRole( 'dialog' ) );
+	await waitFor( () => expect( onClose ).toHaveBeenCalled(), { timeout: 2000 } );
+} );
