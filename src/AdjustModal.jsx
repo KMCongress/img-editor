@@ -143,7 +143,11 @@ export default function AdjustModal( { attachment, settings, onDone, onClose } )
 	return (
 		<Modal
 			title="Kiemelt kép igazítása"
-			onRequestClose={ onClose }
+			// While saving, closing would still let onDone swap the featured image.
+			onRequestClose={ () => ! busy && onClose() }
+			isDismissible={ ! busy }
+			shouldCloseOnEsc={ ! busy }
+			shouldCloseOnClickOutside={ ! busy }
 			className="kmc-fif-modal"
 			size="large"
 		>

@@ -88,3 +88,34 @@ test( 'filename follows the encoded type when the browser falls back from WebP',
 	await waitFor( () => expect( up ).toHaveBeenCalled() );
 	expect( up.mock.calls[ 0 ][ 1 ] ).toBe( 'foto-igazitott.png' );
 } );
+
+/** Escape + close button; the Modal calls onRequestClose after its exit animation. */
+function tryToClose( dialog ) {
+	fireEvent.keyDown( dialog, { key: 'Escape', code: 'Escape' } );
+	fireEvent.animationEnd( dialog );
+	for ( const b of screen.queryAllByRole( 'button', { name: 'Close' } ) ) {
+		fireEvent.click( b );
+		fireEvent.animationEnd( dialog );
+	}
+}
+
+test( 'the modal cannot be closed while saving', async () => {
+	mockImage();
+	vi.spyOn( renderMod, 'exportBlob' ).mockReturnValue( new Promise( () => {} ) );
+	const onClose = vi.fn();
+	render( <AdjustModal attachment={ logo } settings={ s } onDone={ () => {} } onClose={ onClose } /> );
+	fireEvent.click( await screen.findByText( 'Mentés és beállítás kiemelt képként' ) );
+	await waitFor( () => expect( renderMod.exportBlob ).toHaveBeenCalled() );
+	tryToClose( await screen.findByRole( 'dialog' ) );
+	await new Promise( ( r ) => setTimeout( r, 800 ) );
+	expect( onClose ).not.toHaveBeenCalled();
+} );
+
+test( 'Escape closes the modal when idle (control)', async () => {
+	mockImage();
+	const onClose = vi.fn();
+	render( <AdjustModal attachment={ logo } settings={ s } onDone={ () => {} } onClose={ onClose } /> );
+	await screen.findByText( 'Mentés és beállítás kiemelt képként' );
+	tryToClose( await screen.findByRole( 'dialog' ) );
+	await waitFor( () => expect( onClose ).toHaveBeenCalled(), { timeout: 2000 } );
+} );
