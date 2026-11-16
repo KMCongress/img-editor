@@ -59,3 +59,26 @@ test( 'resolveSource surfaces errors other than a deleted source', async () => {
 		resolveSource( { id: 9, meta: { _kmc_fif_source: 7 } } )
 	).rejects.toMatchObject( { code: 'rest_forbidden_context' } );
 } );
+
+test( 'uploadAdjusted deletes the new attachment when the meta write fails', async () => {
+	const err = { code: 'rest_cannot_update', message: 'nope' };
+	apiFetch
+		.mockResolvedValueOnce( { id: 11 } )
+		.mockRejectedValueOnce( err )
+		.mockResolvedValueOnce( { deleted: true } );
+	await expect(
+		uploadAdjusted( new Blob( [ 'x' ], { type: 'image/png' } ), 'a.png', { id: 7 }, {} )
+	).rejects.toBe( err );
+	expect( apiFetch.mock.calls[ 2 ][ 0 ] ).toEqual( { path: '/wp/v2/media/11?force=true', method: 'DELETE' } );
+} );
+
+test( 'a failed cleanup still reports the original error', async () => {
+	const err = { code: 'rest_cannot_update' };
+	apiFetch
+		.mockResolvedValueOnce( { id: 11 } )
+		.mockRejectedValueOnce( err )
+		.mockImplementationOnce( () => Promise.reject( { code: 'rest_cannot_delete' } ) );
+	await expect(
+		uploadAdjusted( new Blob( [ 'x' ], { type: 'image/png' } ), 'a.png', { id: 7 }, {} )
+	).rejects.toBe( err );
+} );

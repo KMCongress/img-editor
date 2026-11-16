@@ -29,12 +29,20 @@ export async function uploadAdjusted( blob, filename, source, params ) {
 	body.append( 'file', new File( [ blob ], filename, { type: blob.type } ) );
 	const created = await apiFetch( { path: '/wp/v2/media', method: 'POST', body } );
 
-	return apiFetch( {
-		path: `/wp/v2/media/${ created.id }?context=edit`,
-		method: 'POST',
-		data: {
-			alt_text: source.alt_text ?? '',
-			meta: { _kmc_fif_source: source.id, _kmc_fif_params: params },
-		},
-	} );
+	try {
+		return await apiFetch( {
+			path: `/wp/v2/media/${ created.id }?context=edit`,
+			method: 'POST',
+			data: {
+				alt_text: source.alt_text ?? '',
+				meta: { _kmc_fif_source: source.id, _kmc_fif_params: params },
+			},
+		} );
+	} catch ( e ) {
+		// Without its meta the upload is an unlinked orphan; every retry would add one.
+		await apiFetch( { path: `/wp/v2/media/${ created.id }?force=true`, method: 'DELETE' } ).catch(
+			() => {}
+		);
+		throw e;
+	}
 }
