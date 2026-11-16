@@ -1,6 +1,6 @@
 === Kiemelt kép igazítása ===
 Contributors: kmcongress
-Requires at least: 6.4
+Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
 Stable tag: 0.0.0-dev
